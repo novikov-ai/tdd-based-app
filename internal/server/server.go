@@ -22,31 +22,39 @@ func New(store PlayerStore) *PlayerServer {
 }
 
 // Postcondition: server registered endpoints: `/players/{name}` & `/league`
-// `players/{name}` => returns a number of total player's wins & record a win for a given name (1 request - 1 win increment)
-// `league` => returns a list of all players stored (format JSON)
 func (ps *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// register a new multiplexer
 	router := http.NewServeMux()
 
 	// register a new endpoint `/players/{name}`
 	router.Handle("/players/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		player := strings.TrimPrefix(r.URL.Path, "/players/")
-
-		switch r.Method {
-		case http.MethodPost:
-			ps.recordWin(w, player)
-		case http.MethodGet:
-			ps.showScore(w, player)
-		}
+		ps.processPlayers(w, r)
 	}))
 
 	// register a new endpoint `/league`
 	router.Handle("/league", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		ps.processLeague(w, r)
 	}))
 
 	// server serves all registered endpoints
 	router.ServeHTTP(w, r)
+}
+
+// Postcondition: returns a number of total player's wins & record a win for a given name (1 request - 1 win increment)
+func (ps *PlayerServer) processPlayers(w http.ResponseWriter, r *http.Request) {
+	player := strings.TrimPrefix(r.URL.Path, "/players/")
+
+	switch r.Method {
+	case http.MethodPost:
+		ps.recordWin(w, player)
+	case http.MethodGet:
+		ps.showScore(w, player)
+	}
+}
+
+// Postcondition: returns a list of all players stored (format JSON)
+func (ps *PlayerServer) processLeague(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (ps *PlayerServer) recordWin(w http.ResponseWriter, player string) {

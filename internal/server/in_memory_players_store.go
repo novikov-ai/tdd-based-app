@@ -17,3 +17,13 @@ func (s *InMemoryPlayerStore) RecordWin(name string) {
 func (s *InMemoryPlayerStore) GetPlayerStore(name string) int {
 	return s.store[name]
 }
+
+func (s *InMemoryPlayerStore) GetPlayers() []string {
+	result := []string{}
+
+	for name := range s.store {
+		result = append(result, name)
+	}
+
+	return result
+}

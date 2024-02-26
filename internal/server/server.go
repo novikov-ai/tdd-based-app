@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,7 @@ import (
 type PlayerStore interface {
 	RecordWin(name string)
 	GetPlayerStore(name string) int
+	GetPlayers() []string
 }
 
 type PlayerServer struct {
@@ -54,7 +56,16 @@ func (ps *PlayerServer) processPlayers(w http.ResponseWriter, r *http.Request) {
 
 // Postcondition: returns a list of all players stored (format JSON)
 func (ps *PlayerServer) processLeague(w http.ResponseWriter, r *http.Request) {
+	var result struct {
+		Players []string `json:"players"`
+	}
 
+	result.Players = ps.store.GetPlayers()
+
+	w.Header().Set("Content-Type", "application/json")
+
+	bytes, _ := json.Marshal(result)
+	w.Write(bytes)
 }
 
 func (ps *PlayerServer) recordWin(w http.ResponseWriter, player string) {

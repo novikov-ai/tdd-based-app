@@ -98,3 +98,7 @@ func (st *StubPlayerStore) GetPlayerStore(name string) int {
 func (st *StubPlayerStore) RecordWin(name string) {
 	st.scores[name]++
 }
+
+func (st *StubPlayerStore) GetPlayers() []string {
+	return nil
+}

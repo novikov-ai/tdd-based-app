@@ -7,6 +7,7 @@ import (
 )
 
 type PlayerStore interface {
+	RecordWin(name string)
 	GetPlayerStore(name string) int
 }
 
@@ -21,17 +22,26 @@ func New(store PlayerStore) *PlayerServer {
 }
 
 func (ps *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		w.WriteHeader(http.StatusAccepted)
-	}
-
 	player := strings.TrimPrefix(r.URL.Path, "/players/")
 
+	switch r.Method {
+	case http.MethodPost:
+		ps.recordWin(w, player)
+	case http.MethodGet:
+		ps.showScore(w, player)
+	}
+}
+
+func (ps *PlayerServer) recordWin(w http.ResponseWriter, player string) {
+	ps.store.RecordWin(player)
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (ps *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	score := ps.store.GetPlayerStore(player)
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
 	}
-
 	fmt.Fprint(w, score)
 }
 

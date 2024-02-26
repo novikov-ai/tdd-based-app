@@ -91,7 +91,7 @@ type StubPlayerStore struct {
 	scores map[string]int
 }
 
-func (st *StubPlayerStore) GetPlayerStore(name string) int {
+func (st *StubPlayerStore) GetPlayerScore(name string) int {
 	return st.scores[name]
 }
 

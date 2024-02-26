@@ -5,8 +5,95 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/nsf/jsondiff"
 )
 
+// TESTS FOLLOWS DESIGN
+func TestServeHTTP(t *testing.T) {
+	server := New(NewInMemoryPlayersStore())
+	server.store.RecordWin("james") // warm up
+
+	t.Run("registered endpoint: `/players/{name}`", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/players/james", nil)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+		assertResponse(t, response.Body.String(), "1")
+	})
+
+	t.Run("registered endpoint: `/league`", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+		assertResponse(t, response.Body.String(), `{"players":["james"]}`)
+	})
+}
+
+func Test_processPlayers(t *testing.T) {
+	t.Run("returns a number of total player's wins", func(t *testing.T) {
+		server := New(NewInMemoryPlayersStore())
+		server.store.RecordWin("james") // warm up
+
+		request, _ := http.NewRequest(http.MethodGet, "/players/james", nil)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+		assertResponse(t, response.Body.String(), "1")
+	})
+
+	t.Run("record a win for a given name (1 request - 1 win increment)", func(t *testing.T) {
+		server := New(NewInMemoryPlayersStore())
+
+		var response *httptest.ResponseRecorder
+		for i := 0; i < 5; i++ {
+			request, _ := http.NewRequest(http.MethodPost, "/players/james", nil)
+			response = httptest.NewRecorder()
+			server.ServeHTTP(response, request)
+		}
+
+		assertStatus(t, response.Code, http.StatusAccepted)
+		assertResponse(t, response.Body.String(), "")
+
+		request, _ := http.NewRequest(http.MethodGet, "/players/james", nil)
+		response = httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+		assertResponse(t, response.Body.String(), "5")
+	})
+}
+
+func Test_processLeague(t *testing.T) {
+	t.Run("returns a list of all players stored (format JSON)", func(t *testing.T) {
+		server := New(NewInMemoryPlayersStore())
+
+		server.store.RecordWin("james") // warm up
+		server.store.RecordWin("alex")
+
+		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusOK)
+
+		diff, _ := jsondiff.Compare([]byte(`{"players":["james","alex"]}`), []byte(response.Body.String()), &jsondiff.Options{})
+		if diff != jsondiff.FullMatch {
+			t.Errorf("got: %q, want: %q", response.Body.String(), `{"players":["james","alex"]}`)
+		}
+	})
+}
+
+// TESTS BASED ON TDD
 func TestGETPlayersGames(t *testing.T) {
 	server := PlayerServer{
 		store: &StubPlayerStore{

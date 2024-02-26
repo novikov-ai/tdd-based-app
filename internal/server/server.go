@@ -80,14 +80,3 @@ func (ps *PlayerServer) showScore(w http.ResponseWriter, player string) {
 	}
 	fmt.Fprint(w, score)
 }
-
-func GetPlayerStore(name string) int {
-	switch name {
-	case "james":
-		return 20
-	case "nick":
-		return 13
-	}
-
-	return 0
-}

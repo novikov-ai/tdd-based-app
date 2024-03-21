@@ -40,7 +40,11 @@ func (s *InMemoryPlayerStore) GetPlayers() []string {
 // Precondition: given league exists
 // Postcondition: returns all players of given league
 func (s *InMemoryPlayerStore) GetPlayersOfLeague(league string) []string {
-	// TODO: implement here
-
-	return []string{}
+	result := make([]string, 0, len(s.playersLeagues))
+	for player, playersLeague := range s.playersLeagues {
+		if playersLeague == league {
+			result = append(result, player)
+		}
+	}
+	return result
 }

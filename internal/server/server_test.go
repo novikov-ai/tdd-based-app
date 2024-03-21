@@ -102,15 +102,10 @@ func Test_processLeaguePlayers(t *testing.T) {
 		server.store.RecordWin("alex", "high")  // warm up
 
 		request, _ := http.NewRequest(http.MethodPost, "/players/james?league=high", nil)
-		response := httptest.NewRecorder()
-		server.ServeHTTP(response, request)
-
 		request, _ = http.NewRequest(http.MethodPost, "/players/bike?league=low", nil)
-		response = httptest.NewRecorder()
-		server.ServeHTTP(response, request)
-
 		request, _ = http.NewRequest(http.MethodPost, "/players/alex?league=high", nil)
-		response = httptest.NewRecorder()
+
+		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
 
 		assertStatus(t, response.Code, http.StatusAccepted)

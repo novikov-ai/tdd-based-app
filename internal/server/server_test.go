@@ -12,7 +12,7 @@ import (
 // TESTS FOLLOWS DESIGN
 func TestServeHTTP(t *testing.T) {
 	server := New(NewInMemoryPlayersStore())
-	server.store.RecordWin("james") // warm up
+	server.store.RecordWin("james", "") // warm up
 
 	t.Run("registered endpoint: `/players/{name}`", func(t *testing.T) {
 		request, _ := http.NewRequest(http.MethodGet, "/players/james", nil)
@@ -38,7 +38,7 @@ func TestServeHTTP(t *testing.T) {
 func Test_processPlayers(t *testing.T) {
 	t.Run("returns a number of total player's wins", func(t *testing.T) {
 		server := New(NewInMemoryPlayersStore())
-		server.store.RecordWin("james") // warm up
+		server.store.RecordWin("james", "") // warm up
 
 		request, _ := http.NewRequest(http.MethodGet, "/players/james", nil)
 		response := httptest.NewRecorder()
@@ -76,8 +76,8 @@ func Test_processLeague(t *testing.T) {
 	t.Run("returns a list of all players stored (format JSON)", func(t *testing.T) {
 		server := New(NewInMemoryPlayersStore())
 
-		server.store.RecordWin("james") // warm up
-		server.store.RecordWin("alex")
+		server.store.RecordWin("james", "") // warm up
+		server.store.RecordWin("alex", "")
 
 		request, _ := http.NewRequest(http.MethodGet, "/league", nil)
 		response := httptest.NewRecorder()
@@ -182,10 +182,14 @@ func (st *StubPlayerStore) GetPlayerScore(name string) int {
 	return st.scores[name]
 }
 
-func (st *StubPlayerStore) RecordWin(name string) {
+func (st *StubPlayerStore) RecordWin(name string, league string) {
 	st.scores[name]++
 }
 
 func (st *StubPlayerStore) GetPlayers() []string {
 	return nil
+}
+
+func (st *StubPlayerStore) GetPlayersOfLeague(league string) []string {
+	return []string{}
 }

@@ -8,9 +8,10 @@ import (
 )
 
 type PlayerStore interface {
-	RecordWin(name string)
+	RecordWin(name string, league string)
 	GetPlayerScore(name string) int
 	GetPlayers() []string
+	GetPlayersOfLeague(league string) []string
 }
 
 type PlayerServer struct {
@@ -69,7 +70,7 @@ func (ps *PlayerServer) processLeague(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ps *PlayerServer) recordWin(w http.ResponseWriter, player string) {
-	ps.store.RecordWin(player)
+	ps.store.RecordWin(player, "")
 	w.WriteHeader(http.StatusAccepted)
 }
 

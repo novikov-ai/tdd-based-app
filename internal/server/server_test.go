@@ -94,39 +94,27 @@ func Test_processLeague(t *testing.T) {
 }
 
 func Test_processLeaguePlayers(t *testing.T) {
+	playersLeagues := map[string]string{
+		"james": "high",
+		"bike":  "low",
+		"alex":  "high",
+	}
 	t.Run("returns a list of league players stored (format JSON)", func(t *testing.T) {
 		server := New(NewInMemoryPlayersStore())
 
-		server.store.RecordWin("james", "high") // warm up
-		server.store.RecordWin("bike", "low")   // warm up
-		server.store.RecordWin("alex", "high")  // warm up
-
-		request, _ := http.NewRequest(http.MethodPost, "/players/james?league=high", nil)
-		request, _ = http.NewRequest(http.MethodPost, "/players/bike?league=low", nil)
-		request, _ = http.NewRequest(http.MethodPost, "/players/alex?league=high", nil)
+		var request *http.Request
+		for player, league := range playersLeagues {
+			server.store.RecordWin(player, league) // warm up
+			request, _ = http.NewRequest(http.MethodPost, fmt.Sprintf("/players/%s?league=%s", player, league), nil)
+		}
 
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, request)
 
 		assertStatus(t, response.Code, http.StatusAccepted)
 
-		request, _ = http.NewRequest(http.MethodGet, "/players/league?value=high", nil)
-		response = httptest.NewRecorder()
-		server.ServeHTTP(response, request)
-
-		diff, _ := jsondiff.Compare([]byte(`{"players":["james","alex"], "league": "high"}`), []byte(response.Body.String()), &jsondiff.Options{})
-		if diff != jsondiff.FullMatch {
-			t.Errorf("got: %q, want: %q", response.Body.String(), `{"players":["james","alex"], "league": "high"}`)
-		}
-
-		request, _ = http.NewRequest(http.MethodGet, "/players/league?value=low", nil)
-		response = httptest.NewRecorder()
-		server.ServeHTTP(response, request)
-
-		diff, _ = jsondiff.Compare([]byte(`{"players":["bike"], "league": "low"}`), []byte(response.Body.String()), &jsondiff.Options{})
-		if diff != jsondiff.FullMatch {
-			t.Errorf("got: %q, want: %q", response.Body.String(), `{"players":["bike"], "league": "low"}`)
-		}
+		assertGivenLeague(t, server, "high", `{"players":["james","alex"], "league": "high"}`)
+		assertGivenLeague(t, server, "low", `{"players":["bike"], "league": "low"}`)
 	})
 }
 
@@ -208,6 +196,17 @@ func assertStatus(t *testing.T, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf("incorect status, got %d, want %d", got, want)
+	}
+}
+
+func assertGivenLeague(t *testing.T, server *PlayerServer, league, expected string) {
+	request, _ := http.NewRequest(http.MethodGet, "/players/league?value="+league, nil)
+	response := httptest.NewRecorder()
+	server.ServeHTTP(response, request)
+
+	diff, _ := jsondiff.Compare([]byte(expected), []byte(response.Body.String()), &jsondiff.Options{})
+	if diff != jsondiff.FullMatch {
+		t.Errorf("got: %q, want: %q", response.Body.String(), expected)
 	}
 }
 
